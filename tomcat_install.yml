@@ -5,7 +5,7 @@
 
   tasks:
   - name: Install Tomcat
-    apt:
+    yum:
       name: tomcat
       state: present
 

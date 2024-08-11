@@ -6,7 +6,7 @@
   tasks:
   - name: Install Tomcat
     apt:
-      name: tomcat9
+      name: tomcat
       state: present
 
   - name: Start Tomcat

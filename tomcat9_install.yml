@@ -1,0 +1,41 @@
+    - name: Download Tomcat 9
+      get_url:
+        url: https://downloads.apache.org/tomcat/tomcat-9/v9.0.72/bin/apache-tomcat-9.0.72.tar.gz
+        dest: /tmp/apache-tomcat-9.0.72.tar.gz
+
+    - name: Extract Tomcat 9
+      unarchive:
+        src: /tmp/apache-tomcat-9.0.72.tar.gz
+        dest: /opt/
+        remote_src: yes
+
+    - name: Move Tomcat to the correct directory
+      command: mv /opt/apache-tomcat-9.0.72 /opt/tomcat9
+
+    - name: Update server.xml to change port to 80
+      replace:
+        path: /opt/tomcat9/conf/server.xml
+        regexp: '(<Connector port=")8080(".*)'
+        replace: '\180\2'
+
+    - name: Make Tomcat scripts executable
+      file:
+        path: /opt/tomcat9/bin/*.sh
+        mode: '0755'
+        recurse: yes
+
+    - name: Start Tomcat
+      command: /opt/tomcat9/bin/startup.sh
+
+    - name: Allow HTTP traffic through SELinux
+      command: setsebool -P httpd_can_network_connect 1
+
+    - name: Allow port 80 in iptables
+      iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 80
+        jump: ACCEPT
+
+    - name: Ensure iptables is saved
+      command: service iptables save

@@ -1,3 +1,8 @@
+---
+- name: Install Tomcat 9 on Linux
+  hosts: tomcat_servers
+  become: yes
+  tasks:
     - name: Download Tomcat 9
       get_url:
         url: https://downloads.apache.org/tomcat/tomcat-9/v9.0.72/bin/apache-tomcat-9.0.72.tar.gz
@@ -38,4 +43,3 @@
         jump: ACCEPT
 
     - name: Ensure iptables is saved
-      command: service iptables save

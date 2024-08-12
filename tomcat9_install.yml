@@ -1,6 +1,6 @@
 ---
 - name: Install Tomcat 9 on Linux
-  hosts: tomcat_servers
+  hosts: target_hosts
   become: yes
   tasks:
     - name: Download Tomcat 9
@@ -43,3 +43,4 @@
         jump: ACCEPT
 
     - name: Ensure iptables is saved
+      command: service iptables save

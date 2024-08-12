@@ -1,9 +1,78 @@
 ---
-- name: Install Tomcat 9 on Linux
-  hosts: target_hosts
+- name: Uninstall Tomcat 9
+  hosts: tomcat_servers
   become: yes
   tasks:
-    - name: Uninstall existing Tomcat
-      yum:
+    
+    - name: Stop Tomcat service
+      service:
+        name: tomcat9
+        state: stopped
+      ignore_errors: yes
+
+    - name: Disable Tomcat service
+      service:
+        name: tomcat9
+        enabled: no
+      ignore_errors: yes
+
+    - name: Remove Tomcat service file
+      file:
+        path: /etc/systemd/system/tomcat9.service
+        state: absent
+
+    - name: Reload systemd to apply changes
+      command: systemctl daemon-reload
+
+    - name: Remove Tomcat installation directory
+      file:
+        path: /opt/tomcat9
+        state: absent
+
+    - name: Remove Tomcat user and group
+      user:
         name: tomcat
         state: absent
+        remove: yes
+
+    - name: Remove Tomcat temp files
+      file:
+        path: /tmp/apache-tomcat-9.0.93.tar.gz
+        state: absent
+
+    - name: Remove symbolic link from /usr/local/bin/tomcat
+      file:
+        path: /usr/local/bin/tomcat
+        state: absent
+
+    - name: Clean up environment variables
+      lineinfile:
+        path: /etc/environment
+        state: absent
+        regexp: '^CATALINA_HOME='
+
+    - name: Remove Tomcat logs
+      file:
+        path: /var/log/tomcat9
+        state: absent
+
+    - name: Remove firewall rules for Tomcat
+      iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 80
+        jump: ACCEPT
+        state: absent
+      notify: save iptables
+
+  handlers:
+    - name: save iptables
+      command: service iptables save
+      ignore_errors: yes
+
+    - name: Restart iptables
+      service:
+        name: iptables
+        state: restarted
+      ignore_errors: yes
+

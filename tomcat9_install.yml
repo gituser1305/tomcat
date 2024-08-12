@@ -5,7 +5,7 @@
   tasks:
     - name: Download Tomcat 9
       get_url:
-        url: https://downloads.apache.org/tomcat/tomcat-9/v9.0.80/bin/apache-tomcat-9.0.80.tar.gz
+        url: https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.93/bin/apache-tomcat-9.0.93.tar.gz
         dest: /tmp/apache-tomcat-9.0.80.tar.gz
 
     - name: Extract Tomcat 9

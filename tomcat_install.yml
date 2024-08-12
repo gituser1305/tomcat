@@ -6,11 +6,11 @@
   tasks:
   - name: Install Tomcat
     yum:
-      name: tomcat
+      name: tomcat9
       state: present
 
   - name: Start Tomcat
     service:
-      name: tomcat
+      name: tomcat9
       state: started
       enabled: yes

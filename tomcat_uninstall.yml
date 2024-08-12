@@ -3,7 +3,7 @@
   hosts: tomcat_servers
   become: yes
   tasks:
-    
+
     - name: Stop Tomcat service
       service:
         name: tomcat9
@@ -29,13 +29,26 @@
         path: /opt/tomcat9
         state: absent
 
-    - name: Remove Tomcat user and group
-      user:
-        name: tomcat
-        state: absent
-        remove: yes
+    - name: Remove Tomcat user and group if they exist
+      block:
+        - name: Check if Tomcat user exists
+          command: id tomcat
+          register: tomcat_user_check
+          ignore_errors: yes
 
-    - name: Remove Tomcat temp files
+        - name: Remove Tomcat user
+          user:
+            name: tomcat
+            state: absent
+          when: tomcat_user_check.rc == 0
+
+        - name: Remove Tomcat group
+          group:
+            name: tomcat
+            state: absent
+          when: tomcat_user_check.rc == 0
+
+    - name: Remove Tomcat temporary files
       file:
         path: /tmp/apache-tomcat-9.0.93.tar.gz
         state: absent

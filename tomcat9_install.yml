@@ -1,6 +1,6 @@
 ---
 - name: Install Tomcat 9 on Linux
-  hosts: target_hosts
+  hosts: tomcat_servers
   become: yes
   tasks:
     - name: Download Tomcat 9

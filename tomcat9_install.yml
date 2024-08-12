@@ -6,16 +6,16 @@
     - name: Download Tomcat 9
       get_url:
         url: https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.93/bin/apache-tomcat-9.0.93.tar.gz
-        dest: /tmp/apache-tomcat-9.0.80.tar.gz
+        dest: /tmp/apache-tomcat-9.0.93.tar.gz
 
     - name: Extract Tomcat 9
       unarchive:
-        src: /tmp/apache-tomcat-9.0.80.tar.gz
+        src: /tmp/apache-tomcat-9.0.93.tar.gz
         dest: /opt/
         remote_src: yes
 
     - name: Move Tomcat to the correct directory
-      command: mv /opt/apache-tomcat-9.0.80 /opt/tomcat9
+      command: mv /opt/apache-tomcat-9.0.93 /opt/tomcat9
 
     - name: Update server.xml to change port to 80
       replace:

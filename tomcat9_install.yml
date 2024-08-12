@@ -28,7 +28,7 @@
     lineinfile:
       path: /opt/tomcat9/conf/server.xml
       regexp: 'Connector port="8080"'
-      line: 'Connector port="80"'
+      line: '<Connector port="80"'
       backup: yes
 
   - name: Create a systemd service file for Tomcat

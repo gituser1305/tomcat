@@ -1,0 +1,16 @@
+---
+- name: Stop Tomcat 9
+  hosts: tomcat_servers
+  become: yes
+  tasks:
+
+    - name: Stop Tomcat service
+      service:
+        name: tomcat9
+        state: stopped
+
+    - name: Disable Tomcat service from boot
+      service:
+        name: tomcat9
+        enabled: no
+

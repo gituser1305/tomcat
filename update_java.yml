@@ -10,10 +10,14 @@
   tasks:
     - name: Check if Java is already installed
       win_shell: |
-        if (Test-Path -Path $env:JAVA_HOME) {
-          Write-Output $env:JAVA_HOME
+        if ($env:JAVA_HOME) {
+          if (Test-Path -Path $env:JAVA_HOME) {
+            Write-Output $env:JAVA_HOME
+          } else {
+            Write-Output "Not Installed"
+          }
         } else {
-          Write-Output "Not Installed"
+          Write-Output "JAVA_HOME not set"
         }
       register: java_home_path
 

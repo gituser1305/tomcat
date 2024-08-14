@@ -16,7 +16,6 @@
     - name: Install Python if not found
       win_command: C:\temp\python-3.9.7-amd64.exe /quiet InstallAllUsers=1 PrependPath=1
       when: python_check.rc != 0
-      become: yes
 
     - name: Verify Python installation
       win_command: python --version

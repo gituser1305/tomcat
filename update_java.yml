@@ -1,0 +1,53 @@
+---
+- name: Update Java Version on Windows
+  hosts: windows_servers
+  gather_facts: no
+  vars:
+    java_version: "{{ java_version }}"
+    java_url: "https://download.oracle.com/java/{{ java_version }}/latest/jdk-{{ java_version }}_windows-x64_bin.exe"
+    java_install_path: "C:\\Program Files\\Java\\jdk-{{ java_version }}"
+
+  tasks:
+    - name: Check if Java is already installed
+      win_shell: |
+        if (Test-Path -Path $env:JAVA_HOME) {
+          Write-Output $env:JAVA_HOME
+        } else {
+          Write-Output "Not Installed"
+        }
+      register: java_home_path
+
+    - name: Output existing Java path
+      debug:
+        msg: "Existing JAVA_HOME: {{ java_home_path.stdout }}"
+
+    - name: Download Java installer
+      win_get_url:
+        url: "{{ java_url }}"
+        dest: "C:\\temp\\jdk-{{ java_version }}_windows-x64_bin.exe"
+
+    - name: Install Java
+      win_package:
+        path: "C:\\temp\\jdk-{{ java_version }}_windows-x64_bin.exe"
+        arguments: /s
+        state: present
+      register: java_install
+
+    - name: Set JAVA_HOME environment variable
+      win_environment:
+        name: JAVA_HOME
+        value: "{{ java_install_path }}"
+        state: present
+        scope: machine
+
+    - name: Add Java to the system path
+      win_environment:
+        name: PATH
+        value: "{{ java_install_path }}\\bin;{{ lookup('env', 'PATH') }}"
+        state: present
+        scope: machine
+
+    - name: Remove temporary files
+      win_file:
+        path: "C:\\temp\\jdk-{{ java_version }}_windows-x64_bin.exe"
+        state: absent

@@ -3,7 +3,7 @@
   gather_facts: yes
   tasks:
     - name: List files in the Java update directory
-      command: ls -l /ansible/projects/JAVA/update
+      command: dir /ansible/projects/JAVA/update
       register: dir_listing
       ignore_errors: yes
 

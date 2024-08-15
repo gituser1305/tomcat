@@ -1,0 +1,5 @@
+- name: Test Ansible connectivity
+  hosts: windows
+  tasks:
+    - name: Test connectivity
+      win_ping:

@@ -10,7 +10,7 @@
 
     - name: Copy Python installer to Windows instance
       win_copy:
-        src: /ansible/projects/PYTHON397/python-3.9.7-amd64.exe
+        src: /ansible/projects/python-installer-3.9.7/python-3.9.7-amd64.exe
         dest: C:\temp\python-3.9.7-amd64.exe
 
     - name: Check if Python is installed

@@ -1,12 +1,40 @@
-- name: Manage Windows Servers
+---
+- name: Manage Java installation on Windows
   hosts: windows_servers
   tasks:
-    - name: Ensure a folder exists
+    - name: Ensure the temp folder exists on Windows instance
       win_file:
-        path: C:\Temp
+        path: C:\temp
         state: directory
 
-    - name: Install a Windows feature
-      win_feature:
-        name: Web-Server
-        state: present
+    - name: Find the Java installer in the update folder
+      ansible.builtin.find:
+        paths: C:\ansible\projects\JAVA\update\
+        patterns: "*.exe"
+      register: java_installer_file
+
+    - name: Fail if no installer file is found
+      ansible.builtin.fail:
+        msg: "No Java installer file found in the update directory!"
+      when: java_installer_file.matched == 0
+
+    - name: Copy Java installer to Windows instance
+      win_copy:
+        src: "{{ java_installer_file.files[0].path }}"
+        dest: C:\temp\{{ java_installer_file.files[0].path | basename }}
+
+    - name: Install Java
+      win_command: C:\temp\{{ java_installer_file.files[0].path | basename }} /s
+
+    - name: Verify Java installation
+      win_command: java -version
+      register: java_version_output
+      ignore_errors: yes  # Java command might fail if Java isn't installed correctly
+
+    - name: Display Java version
+      debug:
+        msg: "{{ java_version_output.stdout }}"
+
+    - name: Move installer file to installed folder
+      ansible.builtin.win_command:
+        cmd: Move-Item -Path C:\temp\{{ java_installer_file.files[0].path | basename }} -Destination C:\ansible\projects\JAVA\installed\

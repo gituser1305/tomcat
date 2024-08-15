@@ -1,29 +1,36 @@
 ---
-- hosts: windows_servers
+- hosts: localhost
+  gather_facts: no
   tasks:
-    - name: Find the latest Java installer file
+    - name: Find the latest Java installer file on Ansible Tower
       find:
         paths: "/ansible/projects/JAVA/update"
         patterns: "jdk-*.exe"
         recurse: no
       register: java_installer
-      delegate_to: localhost
 
     - name: Fail if no Java installer file was found on Ansible Tower
       fail:
         msg: "No Java installer file found in /ansible/projects/JAVA/update"
       when: java_installer.matched == 0
 
+    - name: Display the found Java installer file
+      debug:
+        msg: "Found Java installer: {{ java_installer.files[0].path }}"
+      when: java_installer.matched > 0
+
+- hosts: windows_servers
+  tasks:
     - name: Copy Java installer to Windows instance
       win_copy:
-        src: "{{ java_installer.files[0].path }}"
-        dest: "C:\\temp\\{{ java_installer.files[0].path | basename }}"
-      when: java_installer.matched > 0
+        src: "{{ hostvars['localhost'].java_installer.files[0].path }}"
+        dest: "C:\\temp\\{{ hostvars['localhost'].java_installer.files[0].path | basename }}"
+      when: hostvars['localhost'].java_installer.matched > 0
 
     - name: Install Java
       win_shell: |
-        Start-Process -FilePath "C:\\temp\\{{ java_installer.files[0].path | basename }}" -ArgumentList "/s" -Wait
-      when: java_installer.matched > 0
+        Start-Process -FilePath "C:\\temp\\{{ hostvars['localhost'].java_installer.files[0].path | basename }}" -ArgumentList "/s" -Wait
+      when: hostvars['localhost'].java_installer.matched > 0
       register: java_install
 
     - name: Set JAVA_HOME environment variable

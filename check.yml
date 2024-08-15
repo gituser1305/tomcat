@@ -1,5 +1,6 @@
 - name: Ensure Java is installed on Windows server
   hosts: windows_servers
+  gather_facts: yes
   tasks:
     - name: List files in the Java update directory
       command: ls -l /ansible/projects/JAVA/update
@@ -25,7 +26,6 @@
         msg: "No Java installer file found in /ansible/projects/JAVA/update"
       when: java_installer.files | length == 0
 
-    # You can then proceed with copying and installing Java
     - name: Copy Java installer to Windows instance
       win_copy:
         src: /ansible/projects/JAVA/update/{{ java_installer.files[0].path | basename }}

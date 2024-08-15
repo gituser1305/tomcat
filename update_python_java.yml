@@ -1,17 +1,11 @@
 ---
-- name: Install Java on Windows Server
-  hosts: windows_servers
-  gather_facts: no
+- hosts: windows_servers
   tasks:
-    - name: Ensure temp directory exists on Windows instance
-      win_file:
-        path: C:\temp
-        state: directory
-
-    - name: Find Java installer file on Ansible Tower (Linux)
+    - name: Find the latest Java installer file
       find:
-        paths: /ansible/projects/JAVA/update
+        paths: "/ansible/projects/JAVA/update"
         patterns: "jdk-*.exe"
+        recurse: no
       register: java_installer
       delegate_to: localhost
 
@@ -29,18 +23,29 @@
     - name: Install Java
       win_shell: |
         Start-Process -FilePath "C:\\temp\\{{ java_installer.files[0].path | basename }}" -ArgumentList "/s" -Wait
-      register: java_install
       when: java_installer.matched > 0
+      register: java_install
 
     - name: Set JAVA_HOME environment variable
       win_environment:
+        state: present
         name: JAVA_HOME
-        value: "C:\\Program Files\\Java\\jdk-{{ java_installer.files[0].path | basename | regex_search('jdk-(.*)-windows-x64.exe') }}"
+        value: "C:\\Program Files\\Java\\jdk1.8.0_411"
       when: java_install is succeeded
 
     - name: Add Java to system PATH
       win_environment:
-        name: PATH
-        value: "{{ ansible_env.PATH }};C:\\Program Files\\Java\\jdk-{{ java_installer.files[0].path | basename | regex_search('jdk-(.*)-windows-x64.exe') }}\\bin"
         state: present
+        name: PATH
+        value: "{{ ansible_env.PATH }};C:\\Program Files\\Java\\jdk1.8.0_411\\bin"
+      when: java_install is succeeded
+
+    - name: Verify Java installation
+      win_shell: "java -version"
+      register: java_version
+      when: java_install is succeeded
+
+    - name: Display Java version
+      debug:
+        msg: "{{ java_version.stdout }}"
       when: java_install is succeeded

@@ -1,0 +1,38 @@
+- name: Ensure Java is installed on Windows server
+  hosts: windows_servers
+  tasks:
+    - name: List files in the Java update directory
+      command: ls -l /ansible/projects/JAVA/update
+      register: dir_listing
+      ignore_errors: yes
+
+    - name: Display directory listing
+      debug:
+        var: dir_listing.stdout
+
+    - name: Find the latest Java installer file on Ansible Tower
+      find:
+        paths: "/ansible/projects/JAVA/update"
+        patterns: "*.exe"  # Use a pattern to match any .exe files
+      register: java_installer
+
+    - name: Debug to check the files found
+      debug:
+        var: java_installer.files
+
+    - name: Fail if no Java installer file was found on Ansible Tower
+      fail:
+        msg: "No Java installer file found in /ansible/projects/JAVA/update"
+      when: java_installer.files | length == 0
+
+    # You can then proceed with copying and installing Java
+    - name: Copy Java installer to Windows instance
+      win_copy:
+        src: /ansible/projects/JAVA/update/{{ java_installer.files[0].path | basename }}
+        dest: C:\temp\{{ java_installer.files[0].path | basename }}
+      when: java_installer.files | length > 0
+
+    - name: Install Java
+      win_shell: |
+        Start-Process -FilePath C:\temp\{{ java_installer.files[0].path | basename }} -ArgumentList "/s" -Wait
+      register: java_install

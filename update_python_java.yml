@@ -1,49 +1,46 @@
 ---
-- name: Ensure Java is installed on Windows servers
+- name: Install Java on Windows Server
   hosts: windows_servers
+  gather_facts: no
   tasks:
-
-    - name: Ensure the temp folder exists on Windows instance
+    - name: Ensure temp directory exists on Windows instance
       win_file:
         path: C:\temp
         state: directory
 
-    - name: Find Java installer file
-      win_find:
+    - name: Find Java installer file on Ansible Tower (Linux)
+      find:
         paths: /ansible/projects/JAVA/update
-        patterns: 'jdk-*.exe'
+        patterns: "jdk-*.exe"
       register: java_installer
+      delegate_to: localhost
+
+    - name: Fail if no Java installer file was found on Ansible Tower
+      fail:
+        msg: "No Java installer file found in /ansible/projects/JAVA/update"
+      when: java_installer.matched == 0
 
     - name: Copy Java installer to Windows instance
       win_copy:
-        src: /ansible/projects/JAVA/update/{{ java_installer.files[0].path | basename }}
-        dest: C:\temp\{{ java_installer.files[0].path | basename }}
-      when: java_installer.files | length > 0
+        src: "{{ java_installer.files[0].path }}"
+        dest: "C:\\temp\\{{ java_installer.files[0].path | basename }}"
+      when: java_installer.matched > 0
 
     - name: Install Java
       win_shell: |
-        $installer = Get-ChildItem -Path C:\temp\jdk-*.exe
-        Start-Process -FilePath $installer.FullName -ArgumentList "/s" -Wait
+        Start-Process -FilePath "C:\\temp\\{{ java_installer.files[0].path | basename }}" -ArgumentList "/s" -Wait
       register: java_install
+      when: java_installer.matched > 0
 
-    - name: Set JAVA_HOME and update PATH
-      win_shell: |
-        $java_home = Get-ChildItem "C:\Program Files\Java" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-        [System.Environment]::SetEnvironmentVariable('JAVA_HOME', $java_home.FullName, [System.EnvironmentVariableTarget]::Machine)
-        $env:Path += ";$env:JAVA_HOME\bin"
-        [System.Environment]::SetEnvironmentVariable('Path', $env:Path, [System.EnvironmentVariableTarget]::Machine)
+    - name: Set JAVA_HOME environment variable
+      win_environment:
+        name: JAVA_HOME
+        value: "C:\\Program Files\\Java\\jdk-{{ java_installer.files[0].path | basename | regex_search('jdk-(.*)-windows-x64.exe') }}"
+      when: java_install is succeeded
 
-    - name: Verify Java installation
-      win_command: java -version
-      register: java_version_output
-
-    - name: Display Java version
-      debug:
-        msg: "{{ java_version_output.stdout }}"
-
-- name: Move Java installer on Ansible Controller
-  hosts: localhost
-  tasks:
-    - name: Move Java installer from 'update' to 'installed' on controller
-      command: mv /ansible/projects/JAVA/update/{{ java_installer.files[0].path | basename }} /ansible/projects/JAVA/installed/
-      when: java_installer.files | length > 0
+    - name: Add Java to system PATH
+      win_environment:
+        name: PATH
+        value: "{{ ansible_env.PATH }};C:\\Program Files\\Java\\jdk-{{ java_installer.files[0].path | basename | regex_search('jdk-(.*)-windows-x64.exe') }}\\bin"
+        state: present
+      when: java_install is succeeded

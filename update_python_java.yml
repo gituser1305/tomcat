@@ -8,14 +8,21 @@
         path: C:\temp
         state: directory
 
+    - name: Find Java installer file
+      win_find:
+        paths: /ansible/projects/JAVA/update
+        patterns: 'jdk-*.exe'
+      register: java_installer
+
     - name: Copy Java installer to Windows instance
       win_copy:
-        src: /ansible/projects/JAVA/update/jdk-*.exe
-        dest: C:\temp\
+        src: /ansible/projects/JAVA/update/{{ java_installer.files[0].path | basename }}
+        dest: C:\temp\{{ java_installer.files[0].path | basename }}
+      when: java_installer.files | length > 0
 
     - name: Install Java
       win_shell: |
-        $installer = Get-ChildItem -Path C:\temp\jdk-*.exe | Select-Object -First 1
+        $installer = Get-ChildItem -Path C:\temp\jdk-*.exe
         Start-Process -FilePath $installer.FullName -ArgumentList "/s" -Wait
       register: java_install
 
@@ -38,4 +45,5 @@
   hosts: localhost
   tasks:
     - name: Move Java installer from 'update' to 'installed' on controller
-      command: mv /ansible/projects/JAVA/update/jdk-*.exe /ansible/projects/JAVA/installed/
+      command: mv /ansible/projects/JAVA/update/{{ java_installer.files[0].path | basename }} /ansible/projects/JAVA/installed/
+      when: java_installer.files | length > 0

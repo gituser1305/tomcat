@@ -8,9 +8,19 @@
         path: C:\temp
         state: directory
 
+    - name: Verify that Python installer exists locally on Ansible Controller
+      stat:
+        path: /ansible/projects/python-installer/python-3.9.7-amd64.exe
+      register: python_installer_check
+
+    - name: Fail if Python installer is not found
+      fail:
+        msg: "Python installer not found at /ansible/projects/python-installer/python-3.9.7-amd64.exe on the Ansible Controller."
+      when: not python_installer_check.stat.exists
+
     - name: Copy Python installer to Windows instance
       win_copy:
-        src: /ansible/projects/python-installer-3.9.7/python-3.9.7-amd64.exe
+        src: /ansible/projects/python-installer/python-3.9.7-amd64.exe
         dest: C:\temp\python-3.9.7-amd64.exe
 
     - name: Check if Python is installed
@@ -32,26 +42,30 @@
         msg: "{{ python_version_output.stdout }}"
       when: python_check.rc != 0
 
+    - name: Find the latest Java installer in the update folder
+      find:
+        paths: /ansible/projects/JAVA/update
+        patterns: "*.exe"
+      register: java_installer
+
+    - name: Fail if no Java installer found
+      fail:
+        msg: "No Java installer found in /ansible/projects/JAVA/update."
+      when: java_installer.matched == 0
+
     - name: Copy Java installer to Windows instance
       win_copy:
-        src: /ansible/projects/JAVA/update/{{ item }}
-        dest: C:\temp\{{ item }}
-      with_fileglob:
-        - /ansible/projects/JAVA/update/*.exe
+        src: "{{ java_installer.files[0].path }}"
+        dest: C:\temp\{{ java_installer.files[0].path | basename }}
 
     - name: Install Java
-      win_command: C:\temp\{{ item }} /s
+      win_command: C:\temp\{{ java_installer.files[0].path | basename }} /s
       register: java_install
-      with_fileglob:
-        - /ansible/projects/JAVA/update/*.exe
 
-    - name: Detect Java installation path
-      win_shell: Get-ChildItem 'C:\Program Files\Java' | Where-Object { $_.PsIsContainer } | Select-Object -ExpandProperty FullName
-      register: java_install_path
-
-    - name: Set JAVA_HOME and update PATH dynamically
+    - name: Set JAVA_HOME and update PATH
       win_shell: |
-        $env:JAVA_HOME = "{{ java_install_path.stdout }}"
+        $javaVersion = (Get-ChildItem -Path 'C:\Program Files\Java' | Sort-Object LastWriteTime | Select-Object -Last 1).Name
+        $env:JAVA_HOME = "C:\Program Files\Java\$javaVersion"
         [System.Environment]::SetEnvironmentVariable('JAVA_HOME', $env:JAVA_HOME, [System.EnvironmentVariableTarget]::Machine)
         $env:Path += ";$env:JAVA_HOME\bin"
         [System.Environment]::SetEnvironmentVariable('Path', $env:Path, [System.EnvironmentVariableTarget]::Machine)
@@ -64,9 +78,8 @@
       debug:
         msg: "{{ java_version_output.stdout }}"
 
-    - name: Move Java installer to installed directory and keep a copy in update
+    - name: Move Java installer to installed directory
       win_copy:
-        src: C:\temp\{{ item }}
-        dest: /ansible/projects/JAVA/installed/{{ item }}
-      with_fileglob:
-        - /ansible/projects/JAVA/update/*.exe
+        src: C:\temp\{{ java_installer.files[0].path | basename }}
+        dest: /ansible/projects/JAVA/installed/{{ java_installer.files[0].path | basename }}
+        remote_src: yes

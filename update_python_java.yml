@@ -11,10 +11,12 @@
     - name: Copy Java installer to Windows instance
       win_copy:
         src: /ansible/projects/JAVA/update/jdk-*.exe
-        dest: C:\temp\jdk-installer.exe
+        dest: C:\temp\
 
     - name: Install Java
-      win_shell: Start-Process -FilePath C:\temp\jdk-installer.exe -ArgumentList "/s" -Wait
+      win_shell: |
+        $installer = Get-ChildItem -Path C:\temp\jdk-*.exe | Select-Object -First 1
+        Start-Process -FilePath $installer.FullName -ArgumentList "/s" -Wait
       register: java_install
 
     - name: Set JAVA_HOME and update PATH
@@ -32,5 +34,8 @@
       debug:
         msg: "{{ java_version_output.stdout }}"
 
-    - name: Move Java installer to installed directory
-      win_shell: Move-Item -Path C:\temp\jdk-installer.exe -Destination C:\ansible\projects\JAVA\installed\jdk-installer.exe
+- name: Move Java installer on Ansible Controller
+  hosts: localhost
+  tasks:
+    - name: Move Java installer from 'update' to 'installed' on controller
+      command: mv /ansible/projects/JAVA/update/jdk-*.exe /ansible/projects/JAVA/installed/

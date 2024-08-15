@@ -1,5 +1,12 @@
-- name: Test Ansible connectivity
+- name: Manage Windows Servers
   hosts: windows_servers
   tasks:
-    - name: Test connectivity
-      win_ping:
+    - name: Ensure a folder exists
+      win_file:
+        path: C:\Temp
+        state: directory
+
+    - name: Install a Windows feature
+      win_feature:
+        name: Web-Server
+        state: present
